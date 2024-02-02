@@ -1,0 +1,261 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.Range;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+@Autonomous(name="Autonomous_Blue", group = "Concept")
+
+public class Autonomous_Blue extends LinearOpMode
+{
+    ElapsedTime runtime = new ElapsedTime();
+    
+    private DcMotor leftFrontDrive   = null;  //  Used to control the left front drive wheel
+    private DcMotor rightFrontDrive  = null;  //  Used to control the right front drive wheel
+    private DcMotor leftBackDrive    = null;  //  Used to control the left back drive wheel
+    private DcMotor rightBackDrive   = null;
+    private DcMotor pullermotor = null;
+    private DcMotor pickupmotor = null;
+    private DcMotor bonusmotor = null;
+    private Servo servo_1; // servo_gripper
+    private Servo servo_2; // plane_launch//  Used to control the right back drive wheel
+    double t;
+
+    @Override public void runOpMode()
+    {
+        leftFrontDrive  = hardwareMap.get(DcMotor.class, "left_front");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
+        leftBackDrive  = hardwareMap.get(DcMotor.class, "left_back");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
+        pullermotor = hardwareMap.get(DcMotor.class, "intakemotor");
+        pickupmotor  = hardwareMap.get(DcMotor.class, "pickup");
+        bonusmotor = hardwareMap.get(DcMotor.class, "bonusmotor");
+        servo_1 = hardwareMap.get(Servo.class, "servo_1");
+        servo_2 = hardwareMap.get(Servo.class, "servo_2");
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        pickupmotor.setDirection(DcMotor.Direction.FORWARD);
+        pullermotor.setDirection(DcMotor.Direction.REVERSE);
+        bonusmotor.setDirection(DcMotor.Direction.FORWARD);
+        pickupmotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        pickupmotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //pickupmotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        int motorupos = 80;
+        
+        
+        telemetry.update();
+        waitForStart();
+        runtime.reset();
+        while (opModeIsActive())
+        {
+            t = runtime.time();
+            telemetry.addData("run time", "%4.2f", t);
+            telemetry.update();
+
+            double secondsForward = 2.0;
+            double secondsReverse = 3.7;
+            double turnTime = 5.0;
+            double goFoward = 6.9;
+            double golift = 7.1;
+            double raisearm = 7.6;
+            double letgo = 8.7;
+            double power = 0.3;
+            
+
+            if (t < secondsForward){  //move toward spike to push purple pixel
+                 servo_1.setPosition(0.05);
+                 driveStraight(power, false);
+                pickupmotor.setTargetPosition(motorupos);
+                pickupmotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                pickupmotor.setPower(1);
+            }
+
+            else if (t < secondsReverse && t > secondsForward){
+               driveStraight(power/2, true); //go right 90 degrees
+            }
+            else if (t < turnTime && t > secondsReverse){
+               turn(power, false); //go right 90 degrees
+            }
+            else if (t < goFoward && t > turnTime){
+               driveStraight(power, false); //go right 90 degrees
+            }
+            else if (t < raisearm && t > golift){
+                pickupmotor.setTargetPosition(motorupos);
+                pickupmotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                pickupmotor.setPower(1);
+                pullermotor.setPower(1);
+            }
+            else if (t < letgo && t > raisearm){
+               servo_1.setPosition(1);
+            }
+            
+            else {
+                power = 0.0;
+                driveStraight(power, false);
+                
+                pullermotor.setPower(0);
+                
+                pickupmotor.setTargetPosition(0);
+                pickupmotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                pickupmotor.setPower(1);
+                
+                servo_1.setPosition(0);
+            }
+            
+            
+            
+            double secondsTurning = 4.5;
+            double secondsTowardBackdrop = 5.5;
+            double secondsIntoBackstage = 0.3;
+            
+            //turnNinety(secondsTurning);
+            //driveStraight(secondsTowardBackdrop);
+            //lift arm
+            //turn four bar mechanism
+            //release yellow pixel
+            //close gripper
+            //retract four bar
+            //lower arm
+            //driveStraight(secondsIntoBackstage);
+            //turnNinety(secondsTurning*4);
+            //
+            
+
+        }
+    }
+
+    public void driveStraight(double power, boolean reverse) {
+
+            double p;
+            
+            if (reverse) {
+                p = -power;
+            } else {
+                p = power;
+            }
+
+            double leftFrontPower  = p;
+            double rightFrontPower = p;
+            double leftBackPower   = p;
+            double rightBackPower  = p;
+    
+            // Normalize wheel powers to be less than 1.0
+            double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+            max = Math.max(max, Math.abs(leftBackPower));
+            max = Math.max(max, Math.abs(rightBackPower));
+    
+            if (max > 1.0) {
+                leftFrontPower /= max;
+                rightFrontPower /= max;
+                leftBackPower /= max;
+                rightBackPower /= max;
+            }
+    
+            // Send powers to the wheels.
+            leftFrontDrive.setPower(leftFrontPower);
+            rightFrontDrive.setPower(rightFrontPower);
+            leftBackDrive.setPower(leftBackPower);
+            rightBackDrive.setPower(rightBackPower);
+       // }
+    }
+    
+    public void turn(double power, boolean right) {
+
+            double p;
+            
+            if (right) {
+                p = -power;
+            } else {
+                p = power;
+            }
+
+            double leftFrontPower  = p;
+            double rightFrontPower = p;
+            double leftBackPower   = p;
+            double rightBackPower  = p;
+    
+            // Normalize wheel powers to be less than 1.0
+            double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+            max = Math.max(max, Math.abs(leftBackPower));
+            max = Math.max(max, Math.abs(rightBackPower));
+    
+            if (max > 1.0) {
+                leftFrontPower /= max;
+                rightFrontPower /= max;
+                leftBackPower /= max;
+                rightBackPower /= max;
+            }
+    
+            // Send powers to the wheels.
+
+            rightFrontDrive.setPower(rightFrontPower);
+            rightBackDrive.setPower(rightBackPower);
+            leftFrontDrive.setPower(-leftFrontPower);
+            leftBackDrive.setPower(-leftBackPower);
+
+            
+       // }
+    }
+    public void strafe(double power, boolean right) {
+
+            double p;
+            
+            if (right) {
+                p = -power;
+            } else {
+                p = power;
+            }
+
+            double leftFrontPower  = p;
+            double rightFrontPower = p;
+            double leftBackPower   = p;
+            double rightBackPower  = p;
+    
+            // Normalize wheel powers to be less than 1.0
+            double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+            max = Math.max(max, Math.abs(leftBackPower));
+            max = Math.max(max, Math.abs(rightBackPower));
+    
+            if (max > 1.0) {
+                leftFrontPower /= max;
+                rightFrontPower /= max;
+                leftBackPower /= max;
+                rightBackPower /= max;
+            }
+    
+            // Send powers to the wheels.
+            leftFrontDrive.setPower(-leftFrontPower);
+            rightFrontDrive.setPower(-rightFrontPower);
+            leftBackDrive.setPower(leftBackPower);
+            rightBackDrive.setPower(rightBackPower);
+       // }
+    }
+    /*
+    public void turn(int x) {
+        
+    }
+    */
+}
